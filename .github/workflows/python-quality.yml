@@ -59,7 +59,14 @@ jobs:
         run: uv run mypy .
 
       - name: Bandit (security)
-        run: uv run bandit -r . -x .venv,tests
+        run: |
+          # Bandit matches exclude paths against the scanned path form ("./.venv"),
+          # so "venv"/".venv" without the leading "./" does not exclude the env.
+          bandit_args="-r . -x ./.venv,./tests"
+          if [ -f pyproject.toml ]; then
+            bandit_args="-c pyproject.toml $bandit_args"
+          fi
+          uv run bandit $bandit_args
 
       - name: Dependency audit
         run: uv run pip-audit
