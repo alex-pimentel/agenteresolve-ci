@@ -42,6 +42,9 @@ jobs:
         run: |
           if [ -f uv.lock ]; then
             uv sync --all-extras --all-packages
+          elif [ -f requirements-dev.txt ]; then
+            uv venv && uv pip install -r requirements-dev.txt
+            uv pip install ruff mypy bandit pytest pytest-cov pip-audit
           elif [ -f requirements.txt ]; then
             uv venv && uv pip install -r requirements.txt
             uv pip install ruff mypy bandit pytest pytest-cov pip-audit
