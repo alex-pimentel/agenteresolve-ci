@@ -15,6 +15,9 @@ on:
       coverage_threshold:
         type: number
         default: 0
+      pip_audit_ignore:
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -72,7 +75,12 @@ jobs:
           uv run bandit $bandit_args
 
       - name: Dependency audit
-        run: uv run pip-audit
+        run: |
+          args=""
+          for id in ${{ inputs.pip_audit_ignore }}; do
+            args="$args --ignore-vuln $id"
+          done
+          uv run pip-audit $args
 
       - name: Tests
         run: |

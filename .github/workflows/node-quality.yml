@@ -38,6 +38,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        if: inputs.package_manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
@@ -47,8 +53,8 @@ jobs:
             ${{ inputs.working_directory }}/pnpm-lock.yaml
             ${{ inputs.working_directory }}/yarn.lock
 
-      - name: Enable corepack (pnpm/yarn)
-        if: inputs.package_manager != 'npm'
+      - name: Enable corepack (yarn)
+        if: inputs.package_manager == 'yarn'
         run: corepack enable
 
       - name: Install
@@ -87,6 +93,11 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        if: inputs.package_manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
@@ -95,8 +106,8 @@ jobs:
             ${{ inputs.working_directory }}/package-lock.json
             ${{ inputs.working_directory }}/pnpm-lock.yaml
             ${{ inputs.working_directory }}/yarn.lock
-      - name: Enable corepack (pnpm/yarn)
-        if: inputs.package_manager != 'npm'
+      - name: Enable corepack (yarn)
+        if: inputs.package_manager == 'yarn'
         run: corepack enable
       - name: Install
         run: |
@@ -126,6 +137,11 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        if: inputs.package_manager == 'pnpm'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node_version }}
@@ -134,8 +150,8 @@ jobs:
             ${{ inputs.working_directory }}/package-lock.json
             ${{ inputs.working_directory }}/pnpm-lock.yaml
             ${{ inputs.working_directory }}/yarn.lock
-      - name: Enable corepack (pnpm/yarn)
-        if: inputs.package_manager != 'npm'
+      - name: Enable corepack (yarn)
+        if: inputs.package_manager == 'yarn'
         run: corepack enable
       - name: Install
         run: |
