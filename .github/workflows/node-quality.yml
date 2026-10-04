@@ -42,6 +42,10 @@ jobs:
         with:
           node-version: ${{ inputs.node_version }}
           cache: ${{ inputs.package_manager }}
+          cache-dependency-path: |
+            ${{ inputs.working_directory }}/package-lock.json
+            ${{ inputs.working_directory }}/pnpm-lock.yaml
+            ${{ inputs.working_directory }}/yarn.lock
 
       - name: Enable corepack (pnpm/yarn)
         if: inputs.package_manager != 'npm'
@@ -87,6 +91,10 @@ jobs:
         with:
           node-version: ${{ inputs.node_version }}
           cache: ${{ inputs.package_manager }}
+          cache-dependency-path: |
+            ${{ inputs.working_directory }}/package-lock.json
+            ${{ inputs.working_directory }}/pnpm-lock.yaml
+            ${{ inputs.working_directory }}/yarn.lock
       - name: Enable corepack (pnpm/yarn)
         if: inputs.package_manager != 'npm'
         run: corepack enable
@@ -122,6 +130,10 @@ jobs:
         with:
           node-version: ${{ inputs.node_version }}
           cache: ${{ inputs.package_manager }}
+          cache-dependency-path: |
+            ${{ inputs.working_directory }}/package-lock.json
+            ${{ inputs.working_directory }}/pnpm-lock.yaml
+            ${{ inputs.working_directory }}/yarn.lock
       - name: Enable corepack (pnpm/yarn)
         if: inputs.package_manager != 'npm'
         run: corepack enable
