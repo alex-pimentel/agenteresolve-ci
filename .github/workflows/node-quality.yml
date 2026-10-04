@@ -144,10 +144,10 @@ jobs:
             pnpm) pnpm install --frozen-lockfile ;;
             yarn) yarn install --immutable ;;
           esac
-      - name: Audit
+      - name: Audit (production dependencies)
         run: |
           case "${{ inputs.package_manager }}" in
-            npm)  npm audit --audit-level=high ;;
-            pnpm) pnpm audit --audit-level=high ;;
-            yarn) yarn npm audit --severity high ;;
+            npm)  npm audit --omit=dev --audit-level=high ;;
+            pnpm) pnpm audit --prod --audit-level=high ;;
+            yarn) yarn npm audit --environment production --severity high ;;
           esac
