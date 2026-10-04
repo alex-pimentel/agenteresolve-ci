@@ -60,6 +60,12 @@ jobs:
       - name: PHPStan (static analysis)
         run: vendor/bin/phpstan analyse --no-progress
 
+      - name: Build frontend assets (Vite)
+        if: ${{ hashFiles(format('{0}/package.json', inputs.working_directory)) != '' }}
+        run: |
+          npm ci
+          npm run build
+
       - name: Tests
         env:
           # GitHub Actions service containers are reachable on localhost, not by
