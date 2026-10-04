@@ -1,0 +1,72 @@
+name: PHP Quality
+
+on:
+  workflow_call:
+    inputs:
+      php_version:
+        type: string
+        default: '8.5'
+      working_directory:
+        type: string
+        default: '.'
+      coverage:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: pint · phpstan · tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: agenteresolve
+          POSTGRES_PASSWORD: agenteresolve
+          POSTGRES_DB: agenteresolve_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agenteresolve -d agenteresolve_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ inputs.php_version }}
+          extensions: mbstring, intl, bcmath, zip, pdo, pdo_pgsql, gd
+          coverage: ${{ inputs.coverage && 'xdebug' || 'none' }}
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ${{ inputs.working_directory }}/vendor
+          key: composer-${{ hashFiles(format('{0}/composer.lock', inputs.working_directory)) }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Pint (code style)
+        run: vendor/bin/pint --test
+
+      - name: PHPStan (static analysis)
+        run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Tests
+        run: |
+          if [ "${{ inputs.coverage }}" = "true" ]; then
+            php artisan test --coverage --min=0
+          else
+            php artisan test
+          fi
+
+      - name: Composer audit
+        run: composer audit

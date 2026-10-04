@@ -1,0 +1,141 @@
+name: Node Quality
+
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        type: string
+        default: '22'
+      working_directory:
+        type: string
+        default: '.'
+      package_manager:
+        type: string
+        default: 'npm'        # npm | pnpm | yarn
+      coverage:
+        type: boolean
+        default: false
+      run_e2e:
+        type: boolean
+        default: false
+      e2e_command:
+        type: string
+        default: 'npx playwright test'
+      e2e_install:
+        type: string
+        default: 'npx playwright install --with-deps'
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: lint · format · types · test · build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: ${{ inputs.package_manager }}
+
+      - name: Enable corepack (pnpm/yarn)
+        if: inputs.package_manager != 'npm'
+        run: corepack enable
+
+      - name: Install
+        run: |
+          case "${{ inputs.package_manager }}" in
+            npm)  npm ci ;;
+            pnpm) pnpm install --frozen-lockfile ;;
+            yarn) yarn install --immutable ;;
+          esac
+
+      - name: Lint
+        run: ${{ inputs.package_manager }} run lint
+
+      - name: Format check
+        run: ${{ inputs.package_manager }} run format:check
+
+      - name: Types
+        run: ${{ inputs.package_manager }} run types
+
+      - name: Unit & integration tests
+        run: ${{ inputs.package_manager }} run test
+
+      - name: Unit & integration (coverage)
+        if: inputs.coverage
+        run: ${{ inputs.package_manager }} run test:coverage
+
+      - name: Build
+        run: ${{ inputs.package_manager }} run build
+
+  e2e:
+    name: e2e
+    if: inputs.run_e2e
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: ${{ inputs.package_manager }}
+      - name: Enable corepack (pnpm/yarn)
+        if: inputs.package_manager != 'npm'
+        run: corepack enable
+      - name: Install
+        run: |
+          case "${{ inputs.package_manager }}" in
+            npm)  npm ci ;;
+            pnpm) pnpm install --frozen-lockfile ;;
+            yarn) yarn install --immutable ;;
+          esac
+      - name: Install browser
+        run: ${{ inputs.e2e_install }}
+      - name: Run e2e
+        run: ${{ inputs.e2e_command }}
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ github.sha }}
+          path: ${{ inputs.working_directory }}/playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: ${{ inputs.package_manager }}
+      - name: Enable corepack (pnpm/yarn)
+        if: inputs.package_manager != 'npm'
+        run: corepack enable
+      - name: Install
+        run: |
+          case "${{ inputs.package_manager }}" in
+            npm)  npm ci ;;
+            pnpm) pnpm install --frozen-lockfile ;;
+            yarn) yarn install --immutable ;;
+          esac
+      - name: Audit
+        run: |
+          case "${{ inputs.package_manager }}" in
+            npm)  npm audit --audit-level=high ;;
+            pnpm) pnpm audit --audit-level=high ;;
+            yarn) yarn npm audit --severity high ;;
+          esac

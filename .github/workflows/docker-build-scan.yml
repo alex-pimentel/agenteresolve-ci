@@ -1,0 +1,61 @@
+name: Docker Build & Scan
+
+on:
+  workflow_call:
+    inputs:
+      context:
+        type: string
+        default: '.'
+      dockerfile:
+        type: string
+        default: 'Dockerfile'
+      image_name:
+        type: string
+        required: true
+      target:
+        type: string
+        default: ''
+      platforms:
+        type: string
+        default: 'linux/amd64'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  build-scan:
+    name: build · trivy image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          target: ${{ inputs.target }}
+          push: false
+          load: true
+          tags: ${{ inputs.image_name }}:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ inputs.image_name }}:scan
+          format: sarif
+          output: trivy-image.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image.sarif

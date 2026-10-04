@@ -1,0 +1,73 @@
+name: Python Quality
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        type: string
+        default: '3.12'
+      working_directory:
+        type: string
+        default: '.'
+      coverage:
+        type: boolean
+        default: true
+      coverage_threshold:
+        type: number
+        default: 0
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: ruff · mypy · bandit · pytest
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          if [ -f uv.lock ]; then
+            uv sync --all-extras --all-packages
+          elif [ -f requirements.txt ]; then
+            uv venv && uv pip install -r requirements.txt
+            uv pip install ruff mypy bandit pytest pytest-cov pip-audit
+          else
+            uv venv && uv pip install -e ".[dev]"
+          fi
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Mypy (static analysis)
+        run: uv run mypy .
+
+      - name: Bandit (security)
+        run: uv run bandit -r . -x .venv,tests
+
+      - name: Dependency audit
+        run: uv run pip-audit
+
+      - name: Tests
+        run: |
+          if [ "${{ inputs.coverage }}" = "true" ]; then
+            uv run pytest --cov=. --cov-report=term-missing --cov-fail-under=${{ inputs.coverage_threshold }}
+          else
+            uv run pytest
+          fi
