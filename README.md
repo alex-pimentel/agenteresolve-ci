@@ -10,6 +10,8 @@ Quality gates e padrão de engenharia compartilhados dos projetos Agenteresolve.
 - `.github/workflows/php-quality.yml` — Pint, PHPStan, tests (Postgres), composer audit.
 - `.github/workflows/security-scan.yml` — gitleaks, Trivy FS, Semgrep.
 - `.github/workflows/docker-build-scan.yml` — build + Trivy image.
+- `.github/workflows/verify-prod.yml` — checagem agendada de produção (a cada 6h) via `scripts/verify-prod.sh`.
+- `scripts/verify-prod.sh` — valida frontends, site, gateway, backends e serviços privados em produção (`--json`, `--only`, `--quiet`).
 - `config/` — `.gitleaks.toml`, `dependabot.yml`, `.pre-commit-config.yaml` de base.
 
 ## Uso
