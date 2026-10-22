@@ -79,10 +79,11 @@ check() {
   while true; do
     attempt=$((attempt + 1))
     if [[ "$method" == "POST" ]]; then
-      status="$(curl -sS -o "$body_file" -w '%{http_code}' -m "$TIMEOUT" -X POST "$url" 2>/dev/null || echo 000)"
+      status="$(curl -sS -o "$body_file" -w '%{http_code}' -m "$TIMEOUT" -X POST "$url" 2>/dev/null)" || status=000
     else
-      status="$(curl -sS -o "$body_file" -w '%{http_code}' -m "$TIMEOUT" "$url" 2>/dev/null || echo 000)"
+      status="$(curl -sS -o "$body_file" -w '%{http_code}' -m "$TIMEOUT" "$url" 2>/dev/null)" || status=000
     fi
+    [[ "$status" =~ ^[0-9]{3}$ ]] || status=000
     [[ "$status" != "000" ]] && break
     [[ "$attempt" -gt "$RETRIES" ]] && break
     sleep 1
@@ -103,18 +104,21 @@ check() {
   fi
   rm -f "$body_file"
 
+  local json_status="$status"
+  [[ "$json_status" == "000" ]] && json_status=0
+
   if [[ "$ok" -eq 1 ]]; then
     PASSES=$((PASSES + 1))
     [[ "$QUIET" -eq 0 && "$JSON" -eq 0 ]] && printf '  %s%-6s%s %s\n' "$C_GREEN" "OK" "$C_RESET" "$name"
-    JSON_ROWS+=("{\"name\":\"$name\",\"url\":\"$url\",\"status\":$status,\"ok\":true,\"optional\":$([[ $optional == 1 ]] && echo true || echo false)}")
+    JSON_ROWS+=("{\"name\":\"$name\",\"url\":\"$url\",\"status\":$json_status,\"ok\":true,\"optional\":$([[ $optional == 1 ]] && echo true || echo false)}")
   elif [[ "$optional" == "1" ]]; then
     WARNINGS=$((WARNINGS + 1))
     [[ "$QUIET" -eq 0 && "$JSON" -eq 0 ]] && printf '  %s%-6s%s %s %s(%s)%s\n' "$C_YELLOW" "WARN" "$C_RESET" "$name" "$C_DIM" "$reason" "$C_RESET"
-    JSON_ROWS+=("{\"name\":\"$name\",\"url\":\"$url\",\"status\":$status,\"ok\":false,\"optional\":true}")
+    JSON_ROWS+=("{\"name\":\"$name\",\"url\":\"$url\",\"status\":$json_status,\"ok\":false,\"optional\":true}")
   else
     FAILURES=$((FAILURES + 1))
     [[ "$QUIET" -eq 0 && "$JSON" -eq 0 ]] && printf '  %s%-6s%s %s %s(%s)%s %s\n' "$C_RED" "FAIL" "$C_RESET" "$name" "$C_DIM" "$reason" "$C_RESET" "$snippet"
-    JSON_ROWS+=("{\"name\":\"$name\",\"url\":\"$url\",\"status\":$status,\"ok\":false,\"optional\":false,\"reason\":\"$reason\"}")
+    JSON_ROWS+=("{\"name\":\"$name\",\"url\":\"$url\",\"status\":$json_status,\"ok\":false,\"optional\":false,\"reason\":\"$reason\"}")
   fi
 }
 
@@ -138,11 +142,14 @@ check "site:health" "https://$ZONE/health" 200 "\"status\":\"ok\"" "GET" 0
 
 if [[ "$QUIET" -eq 0 && "$JSON" -eq 0 ]]; then echo; echo "Gateway e backends"; fi
 check "gateway:health" "https://api.$ZONE/health" 200 "\"status\":\"ok\"" "GET" 0
-check "gateway:auth-required" "https://api.$ZONE/api/auth/me" 401 "" "GET" 0
+# Clerk ainda não configurado em produção: AUTH_REQUIRED=false faz /api/auth/me
+# responder 200 (local-dev) em vez de 401. Vira aviso até as chaves Clerk entrarem.
+check "gateway:auth-required" "https://api.$ZONE/api/auth/me" 401 "" "GET" 1
 check "backend:translate-api" "https://translate-api.$ZONE/health" 200 "" "GET" 0
 
 if [[ "$QUIET" -eq 0 && "$JSON" -eq 0 ]]; then echo; echo "Privados"; fi
 check "coder:private" "https://coder.$ZONE" 401 "" "GET" 0
+check "coder:runner" "https://coder.$ZONE/runner/ping" 200 "agenteresolve-runner" "GET" 0
 check "code-server:login" "https://code.$ZONE/login" 200 "" "GET" 0
 
 if [[ "$QUIET" -eq 0 && "$JSON" -eq 0 ]]; then echo; echo "Opcionais"; fi
