@@ -18,6 +18,9 @@ on:
       db_host:
         type: string
         default: '127.0.0.1'
+      node_version:
+        type: string
+        default: '22'
 
 permissions:
   contents: read
@@ -65,6 +68,14 @@ jobs:
 
       - name: PHPStan (static analysis)
         run: vendor/bin/phpstan analyse --no-progress
+
+      - name: Setup Node
+        if: ${{ hashFiles(format('{0}/package.json', inputs.working_directory)) != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working_directory }}/package-lock.json
 
       - name: Build frontend assets (Vite)
         if: ${{ hashFiles(format('{0}/package.json', inputs.working_directory)) != '' }}
