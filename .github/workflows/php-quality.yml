@@ -12,6 +12,9 @@ on:
       coverage:
         type: boolean
         default: false
+      runs_on:
+        type: string
+        default: 'ubuntu-latest'
 
 permissions:
   contents: read
@@ -19,7 +22,7 @@ permissions:
 jobs:
   quality:
     name: pint · phpstan · tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}

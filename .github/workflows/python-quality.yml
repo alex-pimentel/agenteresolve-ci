@@ -18,6 +18,9 @@ on:
       pip_audit_ignore:
         type: string
         default: ''
+      runs_on:
+        type: string
+        default: 'ubuntu-latest'
 
 permissions:
   contents: read
@@ -25,7 +28,7 @@ permissions:
 jobs:
   quality:
     name: ruff · mypy · bandit · pytest
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}

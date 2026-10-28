@@ -24,6 +24,9 @@ on:
       e2e_install:
         type: string
         default: 'npx playwright install --with-deps'
+      runs_on:
+        type: string
+        default: 'ubuntu-latest'
 
 permissions:
   contents: read
@@ -31,7 +34,7 @@ permissions:
 jobs:
   quality:
     name: lint · format · types · test · build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
@@ -87,7 +90,7 @@ jobs:
   e2e:
     name: e2e
     if: inputs.run_e2e
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
@@ -131,7 +134,7 @@ jobs:
 
   audit:
     name: dependency audit
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
