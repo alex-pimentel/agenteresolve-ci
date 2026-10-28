@@ -28,6 +28,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: ${{ inputs.working_directory }}/.gitleaks.toml
+          # No runner em container o workspace não fica sob $HOME; o upload do
+          # artefato SARIF do action quebra com "rootDirectory is not a parent".
+          # O scan continua; o artefato não é consumido por nenhum job.
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
 
   trivy:
     name: filesystem & deps (trivy)
