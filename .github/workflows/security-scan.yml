@@ -6,6 +6,9 @@ on:
       working_directory:
         type: string
         default: '.'
+      runs_on:
+        type: string
+        default: 'ubuntu-latest'
 
 permissions:
   contents: read
@@ -14,7 +17,7 @@ permissions:
 jobs:
   secrets:
     name: secrets (gitleaks)
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,7 +30,7 @@ jobs:
 
   trivy:
     name: filesystem & deps (trivy)
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
       - name: Trivy fs scan
@@ -49,7 +52,7 @@ jobs:
 
   semgrep:
     name: sast (semgrep)
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
       - uses: returntocorp/semgrep-action@v1

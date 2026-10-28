@@ -18,6 +18,9 @@ on:
       platforms:
         type: string
         default: 'linux/amd64'
+      runs_on:
+        type: string
+        default: 'ubuntu-latest'
 
 permissions:
   contents: read
@@ -26,7 +29,7 @@ permissions:
 jobs:
   build-scan:
     name: build · trivy image
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
 
